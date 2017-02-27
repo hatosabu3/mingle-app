@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,minimum-scale=1.0,user-scalable=no">
+  <title>websocket-chat</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../js/client.js"></script>
+  <link rel="stylesheet" href="../public/css/common.css" type="text/css" />
+</head>
+<body>
+
+  <div class="wrapper" id="wrapper">
+    <div id="messages"></div>
+  </div>
+
+  <footer class="footer">
+    <div class="container_footer">
+      <form name="js" class="form-inline">
+        <div class="col-xs-1">
+          <div style="text-align:center;margin-left:-5px;">
+            <button type="button" class="upload_file">
+              <span class="glyphicon glyphicon-remove" style="margin-left:-5px;"></span>
+            </button>
+          </div>
+        </div>
+        <div class="col-xs-1">
+          <div style="text-align:center;">
+            <button type="button" class="upload_file" data-toggle="modal" data-target="#myModal">
+              <span class="glyphicon glyphicon-open" style="margin-left:-7px;"></span>
+            </button>
+          </div>
+        </div>
+        <div class="col-xs-8">
+          <input type="text" class="text_form" name="txtb" id="msg" onkeydown="go()">
+        </div>
+        <div class="col-xs-2">
+          <div style="text-align:center;margin-left:-15px">
+            <button type="button" class="send_button" value="send" onclick="send()">送信</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </footer>
+      <!-- button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">＋</button -->
+
+      <br/>
+
+      <!-- div id="messages"></div -->
+
+      <!-- モーダルウィンドウの中身 -->
+      <div class="modal fade" id="myModal" name="myModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title">画像のアップロード</h4>
+            </div>
+
+            <div class="modal-body">
+            
+              <form action="" method="post" enctype="multipart/form-data">
+
+                  <div id="preview" class="imagePreview"></div>
+
+                  <div class="input-group">
+                      <label class="input-group-btn">
+                          <span class="btn btn-primary">
+                              選択<input type="file" id="file" style="display:none" class="uploadFile">
+                          </span>
+                      </label>
+                      <input type="text" id="file_name" class="form-control" readonly="" />
+                  </div>
+
+              </form>
+            
+            
+                        
+              <script>
+              
+              $(document).on('change', ':file', function() {
+                  var input = $(this),
+                      numFiles = input.get(0).files ? input.get(0).files.length : 1,
+                      label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+                      input.parent().parent().next(':text').val(label);
+
+                  input.parent().parent().parent().prev('.imagePreview').css("background-image");
+
+                  var files = !!this.files ? this.files : [];
+                  if (!files.length || !window.FileReader) return; // no file selected, or no FileReader support
+                  if (/^image/.test( files[0].type)){ // only image file
+                      var reader = new FileReader(); // instance of the FileReader
+                      reader.readAsDataURL(files[0]); // read the local file
+                      reader.onloadend = function(){ // set image data as background of div
+                          input.parent().parent().parent().prev('.imagePreview').css("background-image", "url("+this.result+")");
+                      }
+                  }
+              });
+              
+              </script>
+
+             <div class="modal-footer">
+               <button type="button" class="btn btn-primary" data-dismiss="modal">キャンセル</button>
+               <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="sendFile()">送信</button>
+             </div>
+          </div>
+        </div>
+      </div>
+
+
+</body>
+</html>
