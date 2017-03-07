@@ -3,8 +3,6 @@ var WebSocketServer = require('ws').Server
     , http = require('http')
     , express = require('express')
     , app = express();
- 
-//app.use(express.static(__dirname + '/'));
 var server = http.createServer(app);
 var wss = new WebSocketServer({server:server});
  
@@ -20,25 +18,28 @@ app.use('/public', express.static('public'));
 app.use('/js',express.static('js'));
 
 // ルーティング設定
-app.use('/', require('./routes/index.js'));
+app.use('/', require('./routes/index'));
 
-var users = {};
+users = {};
 var ArrayMessage = new Array();
+var key = "";
+var box_id = "dummy";
 
 //接続時
 wss.on('connection', function (ws) {
-    //var key = ws.upgradeReq.headers['sec-websocket-key'];
-    var key = ws.upgradeReq.headers.cookie;
-    console.log('connect:' + key);
-    //console.log(ws);
+
+    key = ws.upgradeReq.url.split("/")[2];
+    console.log('connect:' + key + ' box_id:' + box_id);
+
+    //userを設定
+    users[key] = [ws,'connected',getTime(),box_id];
 
     //配列にWebSocket接続を保存
     connections.push(ws);
-    users[key] = ws;
     var type = 'connect';
-    ws.send(JSON.stringify([type,key,'dummy']));
     
-    //再接続時にmessageを再送する
+    //接続時に配信済のmessageを再送する
+    ws.send(JSON.stringify([type,'dummy',key,'dummy']));
     recast(ws,ArrayMessage);
 
     //切断時
@@ -47,33 +48,23 @@ wss.on('connection', function (ws) {
         connections = connections.filter(function (conn, i) {
             return (conn === ws) ? false : true;
         });
+
+        //user情報をクリアする
+        //wsをクリア、ステータス:disconnected,タイムスタンプ、box_idはそのまま
+        users[key] = [null,'disconnected',getTime(),box_id];
     });
 
     //メッセージ受信時
     ws.on('message', function (message,req,res) {
         //get server time
         var timestamp = getTime();
-
-        switch (ws.upgradeReq.url){
-          case '/':
-            var type = 'text';
-            break;
-          case '/image':
-            var type = 'img';
-            break;
-          case '/movie':
-            var type = 'movie';
-            break;
-          default:
-            var type = 'other';
-            break;
-        }
+        var data = JSON.parse(message);
 
         //メッセージが100件以上溜まったらshiftする
         if (ArrayMessage.length >= 100) {
           ArrayMessage.shift;
         }
-        ArrayMessage.push(JSON.stringify([type,message,key,timestamp]));
+        ArrayMessage.push(JSON.stringify([data[0],data[2],data[1],timestamp]));
 
         console.log(ArrayMessage.length,ArrayMessage[ArrayMessage.length - 1]);
 
@@ -84,8 +75,6 @@ wss.on('connection', function (ws) {
 //ブロードキャストを行う
 function broadcast(message) {
     connections.forEach(function (con, i) {
-        //con.set('Content-Type','image/jpeg');
-        //console.log(message);
         con.send(message);
     });
 };
@@ -103,18 +92,14 @@ var toDoubleDigits = function(num) {
   if (num.length === 1) {
     num = "0" + num;
   }
- return num;     
+ return num;
 };
 
 //時刻書式変換
 var getTime = function() {
   var date = new Date();
-  //var yyyy = date.getFullYear();
-  //var mm = toDoubleDigits(date.getMonth() + 1);
-  //var dd = toDoubleDigits(date.getDate());
   var hh = toDoubleDigits(date.getHours());
   var mi = toDoubleDigits(date.getMinutes());
-  //return yyyy + '/' + mm + '/' + dd + ' ' + hh + ':' + mi;
   return hh + ':' + mi;
 };
 

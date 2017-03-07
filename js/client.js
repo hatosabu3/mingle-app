@@ -22,10 +22,8 @@ function ImageToBase64(img, mime_type) {
 
 //メッセージをサーバーへ送信する
 function send() {
-    //if (document.js.txtb.value != ""){
    if(document.getElementById('msg').value != ""){
-      ws.send(document.getElementById('msg').value);
-      //document.js.txtb.value="";
+      ws.send(JSON.stringify(['text',id,document.getElementById('msg').value]));
       document.getElementById('msg').value = "";
     }
 }
@@ -41,9 +39,9 @@ function sendFile() {
     reader.onload = function(evt){
         console.log(file.type.split("/")[0]);
         if ( file.type.split("/")[0] == "image") {
-          ws_image.send(evt.target.result);
+          ws.send(JSON.stringify(['img',evt.target.result]));
         }  else if ( file.type.split("/")[0] == "video") {
-          ws_movie.send(evt.target.result);
+          ws.send(JSON.stringify(['mov',evt.target.result]));
         }
     }
     reader.readAsDataURL( file );
@@ -62,9 +60,7 @@ function clearValue(id){
 }
 
 var host = window.document.location.host.replace(/:.*/, '');
-var ws = new WebSocket('ws://' + host + ':5000');
-var ws_image = new WebSocket('ws://' + host + ':5000/image');
-var ws_movie = new WebSocket('ws://' + host + ':5000/movie');
+var ws = new WebSocket('ws://' + host + ':5000/box/' + u_key);
 var messageText = "";
 var messageCount = 0;
 var id = "";
@@ -84,7 +80,6 @@ ws.onmessage = function (event) {
     /* add */
 
     if ( type == "text" ) {
-      console.log(id + ":" + message[2]);
       if (message[2] == id) {
         messageText += "<div class=\"" + "right" + "_balloon" + "\" id=\"message_" + String(messageCount) + "\"> " + data + "</div>";
       } else {
@@ -92,15 +87,17 @@ ws.onmessage = function (event) {
       }
     } else if ( type == "img" ) {
       messageText += "<img class=\'img-responsive\' src=\"" + data + "\"</img> <br/>";
-    } else if ( type == "movie") {
+    } else if ( type == "mov") {
       messageText += "<video controls = true> \n <source src=\'" + data + "\' type=\'video/ogg; codecs=\"theora, vorbis\"\'> \n <source src=\'" + data + "\' type=\'video/mp4; codecs=\"avc1.42E01E, mp4a.40.2\"\'> \n <p>動画を再生するには、videoタグをサポートしたブラウザが必要です。</p> \n </video> <br/>";
     } else if ( type == "connect") {
-      id = data;
+      //初回アクセス時にはクライアントidを取得
+      id = message[2];
+      history.replaceState('','','/box/' + u_key);
     } else {
       console.log(type);
     }
 
-    if ( type == "text" || type == "img" || type == "movie") {
+    if ( type == "text" || type == "img" || type == "mov") {
       //display message
       document.getElementById("messages").innerHTML = messageText;
 
@@ -130,7 +127,7 @@ ws.onmessage = function (event) {
       messageText += "<div style=\"position:relative;clear:both;width:100%;height:0px;\"></div>";
 
       //dummy empty area
-      document.getElementById("messages").innerHTML += "<div style=\"position:relative;clear:both;width:100%;height:50px\"/>";
+      document.getElementById("messages").innerHTML += "<div style=\"position:relative;clear:both;width:100%;height:80px\"/>";
 
       //scroll message
       document.getElementById("wrapper").scrollTop = document.getElementById("wrapper").scrollHeight;
